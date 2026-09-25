@@ -12,48 +12,42 @@ const doConnect = async () => {
       );
     }
 
-    const sanitizedUri = targetUri.replace(/:([^:@]{4})[^:@]*@/, ':****@');
-    console.log(`Connecting to MongoDB at: ${sanitizedUri} ...`);
-    const conn = await mongoose.connect(targetUri, {
-      serverSelectionTimeoutMS: 8000, // 8s timeout for serverless cold start to Atlas
-      bufferCommands: false,
-    });
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
-    return conn;
-  }
-
-  // Fallback for local development if MONGO_URI is not set
-  if (!process.env.VERCEL && process.env.NODE_ENV !== 'production') {
-    const localUri = 'mongodb://127.0.0.1:27017/expense_tracker';
     try {
-      console.log(`Connecting to local MongoDB at: ${localUri} ...`);
-      const conn = await mongoose.connect(localUri, {
-        serverSelectionTimeoutMS: 2000,
+      const sanitizedUri = targetUri.replace(/:([^:@]{4})[^:@]*@/, ':****@');
+      console.log(`Connecting to MongoDB at: ${sanitizedUri} ...`);
+      const conn = await mongoose.connect(targetUri, {
+        serverSelectionTimeoutMS: process.env.VERCEL ? 8000 : 2500,
         bufferCommands: false,
       });
-      console.log(`Local MongoDB Connected: ${conn.connection.host}`);
+      console.log(`MongoDB Connected: ${conn.connection.host}`);
       return conn;
-    } catch (primaryErr) {
-      console.warn(`Local MongoDB not running: ${primaryErr.message}`);
-      console.log('Spinning up embedded MongoDB instance for automatic zero-config database...');
-
-      try {
-        await mongoose.disconnect();
-      } catch (_) {}
-
-      try {
-        const { MongoMemoryServer } = await import('mongodb-memory-server');
-        const memServer = await MongoMemoryServer.create({
-          instance: { dbName: 'expense_tracker' },
-        });
-        const memUri = memServer.getUri();
-        const conn = await mongoose.connect(memUri, { bufferCommands: false });
-        console.log(`Embedded MongoDB Connected successfully at: ${memUri}`);
-        return conn;
-      } catch (memErr) {
-        console.error('Failed to start embedded MongoDB:', memErr.message);
-        throw memErr;
+    } catch (err) {
+      if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+        throw err;
       }
+      console.warn(`Could not connect to external MongoDB (${err.message}).`);
+      console.log('Spinning up embedded MongoDB instance for automatic zero-config database...');
+    }
+  }
+
+  // Fallback for local development
+  if (!process.env.VERCEL && process.env.NODE_ENV !== 'production') {
+    try {
+      await mongoose.disconnect();
+    } catch (_) {}
+
+    try {
+      const { MongoMemoryServer } = await import('mongodb-memory-server');
+      const memServer = await MongoMemoryServer.create({
+        instance: { dbName: 'expense_tracker' },
+      });
+      const memUri = memServer.getUri();
+      const conn = await mongoose.connect(memUri, { bufferCommands: false });
+      console.log(`Embedded MongoDB Connected successfully at: ${memUri}`);
+      return conn;
+    } catch (memErr) {
+      console.error('Failed to start embedded MongoDB:', memErr.message);
+      throw memErr;
     }
   }
 
