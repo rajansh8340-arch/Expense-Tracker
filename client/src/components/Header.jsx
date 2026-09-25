@@ -15,16 +15,23 @@ import {
   User as UserIcon,
   ShieldCheck,
   Target,
+  Activity,
+  Server,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useApiStatus } from '../hooks/useApiStatus';
+import DiagnosticsModal from './DiagnosticsModal';
 import api from '../services/api';
 
 export const Header = ({ activeTab, setActiveTab, onOpenAddModal, onOpenMobileMenu, showToast }) => {
   const { user, logout, currencySymbol, formatMoney } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const apiStatus = useApiStatus(true, 30000);
+
 
   const titles = {
     overview: {
@@ -119,6 +126,39 @@ export const Header = ({ activeTab, setActiveTab, onOpenAddModal, onOpenMobileMe
       </div>
 
       <div className="header-right">
+        {/* Live API Connection Status Pill */}
+        <button
+          type="button"
+          className={`header-api-status-pill ${
+            apiStatus.isConnected
+              ? 'status-online'
+              : apiStatus.isChecking
+              ? 'status-checking'
+              : 'status-offline'
+          }`}
+          onClick={() => setDiagnosticsOpen(true)}
+          title={`API Base: ${apiStatus.config.apiUrl} (${
+            apiStatus.isConnected ? 'Connected' : 'Offline'
+          }) - Click to inspect environment & latency`}
+        >
+          <span
+            className={`status-pulse-dot ${
+              apiStatus.isConnected
+                ? 'pulse-green'
+                : apiStatus.isChecking
+                ? 'pulse-yellow'
+                : 'pulse-red'
+            }`}
+          />
+          <span className="api-status-label">
+            {apiStatus.isConnected
+              ? `API ${apiStatus.latencyMs !== null ? `${apiStatus.latencyMs}ms` : 'Online'}`
+              : apiStatus.isChecking
+              ? 'Checking...'
+              : 'API Offline'}
+          </span>
+        </button>
+
         {/* Currency Badge */}
         <div className="header-currency-chip" title="Active Display Currency">
           <span className="currency-label">{user?.currency || 'USD'}</span>
@@ -229,6 +269,18 @@ export const Header = ({ activeTab, setActiveTab, onOpenAddModal, onOpenMobileMe
                 <button
                   type="button"
                   className="dropdown-nav-item"
+                  onClick={() => {
+                    setDropdownOpen(false);
+                    setDiagnosticsOpen(true);
+                  }}
+                >
+                  <Activity size={16} className="dropdown-item-icon text-income" />
+                  <span>API & System Diagnostics</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="dropdown-nav-item"
                   onClick={handleExportCSV}
                 >
                   <Download size={16} className="dropdown-item-icon" />
@@ -269,6 +321,13 @@ export const Header = ({ activeTab, setActiveTab, onOpenAddModal, onOpenMobileMe
           )}
         </div>
       </div>
+
+      {/* Diagnostics & Environment Modal */}
+      <DiagnosticsModal
+        isOpen={diagnosticsOpen}
+        onClose={() => setDiagnosticsOpen(false)}
+        showToast={showToast}
+      />
     </header>
   );
 };

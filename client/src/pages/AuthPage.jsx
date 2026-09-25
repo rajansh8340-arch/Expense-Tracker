@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   CreditCard,
   Lock,
@@ -14,14 +14,20 @@ import {
   DollarSign,
   Sun,
   Moon,
+  AlertTriangle,
+  RefreshCw,
+  Activity,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { getAppConfig, checkApiHealth } from '../services/api';
+import DiagnosticsModal from '../components/DiagnosticsModal';
 
 export const AuthPage = ({ showToast }) => {
   const { login, register, demoLogin } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
+  const [appConfig] = useState(getAppConfig());
   const [mode, setMode] = useState('login'); // 'login' | 'register'
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -31,6 +37,29 @@ export const AuthPage = ({ showToast }) => {
   const [busy, setBusy] = useState(false);
   const [demoBusy, setDemoBusy] = useState(false);
   const [error, setError] = useState('');
+  const [networkError, setNetworkError] = useState(false);
+  const [apiOnline, setApiOnline] = useState(true);
+  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
+  const [checkingApi, setCheckingApi] = useState(false);
+
+  const checkConnection = async () => {
+    setCheckingApi(true);
+    try {
+      const res = await checkApiHealth();
+      setApiOnline(res.ok);
+      if (res.ok) {
+        setNetworkError(false);
+      }
+    } catch (_) {
+      setApiOnline(false);
+    } finally {
+      setCheckingApi(false);
+    }
+  };
+
+  useEffect(() => {
+    checkConnection();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -52,7 +81,9 @@ export const AuthPage = ({ showToast }) => {
       }
     } catch (err) {
       if (!err.response) {
-        setError('Cannot reach server. Please make sure the backend API is running on port 5000.');
+        setNetworkError(true);
+        setApiOnline(false);
+        setError(`Cannot reach API server at ${appConfig.apiUrl}. Please verify the backend is running.`);
       } else {
         setError(err.response?.data?.message || 'Authentication failed. Please check credentials.');
       }
@@ -63,13 +94,16 @@ export const AuthPage = ({ showToast }) => {
 
   const handleDemoLogin = async () => {
     setError('');
+    setNetworkError(false);
     setDemoBusy(true);
     try {
       await demoLogin();
       showToast?.('Logged into Instant Demo Account with sample data!', 'success');
     } catch (err) {
       if (!err.response) {
-        setError('Cannot reach server. Please make sure the backend API is running on port 5000.');
+        setNetworkError(true);
+        setApiOnline(false);
+        setError(`Cannot reach API server at ${appConfig.apiUrl}. Please verify the backend is running.`);
       } else {
         setError(err.response?.data?.message || 'Failed to start demo session. Please try again.');
       }
@@ -80,8 +114,24 @@ export const AuthPage = ({ showToast }) => {
 
   return (
     <div className="auth-hero-container">
-      {/* Top right theme toggle */}
+      {/* Top right bar with status pill & theme toggle */}
       <div className="auth-top-bar">
+        <button
+          type="button"
+          className={`header-api-status-pill ${
+            apiOnline ? 'status-online' : checkingApi ? 'status-checking' : 'status-offline'
+          }`}
+          onClick={() => setDiagnosticsOpen(true)}
+          title={`Backend: ${appConfig.apiUrl} (${apiOnline ? 'Connected' : 'Offline'}) - Click for diagnostics`}
+        >
+          <span
+            className={`status-pulse-dot ${
+              apiOnline ? 'pulse-green' : checkingApi ? 'pulse-yellow' : 'pulse-red'
+            }`}
+          />
+          <span>{apiOnline ? 'API Connected' : checkingApi ? 'Checking...' : 'API Offline'}</span>
+        </button>
+
         <button
           type="button"
           className="icon-btn-header auth-theme-toggle"
@@ -108,22 +158,45 @@ export const AuthPage = ({ showToast }) => {
           <p className="auth-brand-caption">Full-Stack MERN Personal Finance & Expense Tracker</p>
         </div>
 
-        {/* Instant Demo Account Button */}
-        <div className="demo-banner-box">
-          <div className="demo-banner-text">
-            <strong>Want to explore immediately?</strong>
-            <span>One-click test drive with pre-loaded transactions and charts.</span>
+        {/* Unreachable Server Diagnostic Banner */}
+        {networkError && (
+          <div className="auth-api-alert">
+            <AlertTriangle size={20} className="text-expense" style={{ flexShrink: 0, marginTop: '2px' }} />
+            <div className="alert-content">
+              <div className="alert-title">Cannot Connect to Backend Server</div>
+              <p>
+                API requests to <code>{appConfig.apiUrl}</code> failed. Please verify your backend server is running (port 5000) or check <code>client/.env</code>.
+              </p>
+              <button
+                type="button"
+                onClick={checkConnection}
+                disabled={checkingApi}
+              >
+                <RefreshCw size={13} className={checkingApi ? 'spin-animation' : ''} />
+                <span>{checkingApi ? 'Checking Server...' : 'Retry Connection'}</span>
+              </button>
+            </div>
           </div>
-          <button
-            type="button"
-            className="btn-demo-instant"
-            onClick={handleDemoLogin}
-            disabled={demoBusy || busy}
-          >
-            <Sparkles size={16} />
-            <span>{demoBusy ? 'Launching Demo...' : 'Instant Demo Login'}</span>
-          </button>
-        </div>
+        )}
+
+        {/* Instant Demo Account Button */}
+        {appConfig.isDemoEnabled && (
+          <div className="demo-banner-box">
+            <div className="demo-banner-text">
+              <strong>Want to explore immediately?</strong>
+              <span>One-click test drive with pre-loaded transactions and charts.</span>
+            </div>
+            <button
+              type="button"
+              className="btn-demo-instant"
+              onClick={handleDemoLogin}
+              disabled={demoBusy || busy}
+            >
+              <Sparkles size={16} />
+              <span>{demoBusy ? 'Launching Demo...' : 'Instant Demo Login'}</span>
+            </button>
+          </div>
+        )}
 
         {/* Auth Card */}
         <div className="auth-glass-card">
@@ -261,6 +334,13 @@ export const AuthPage = ({ showToast }) => {
           <span>Secured with JSON Web Tokens and Bcrypt Hashing</span>
         </div>
       </div>
+
+      {/* Diagnostics Modal for Auth Page */}
+      <DiagnosticsModal
+        isOpen={diagnosticsOpen}
+        onClose={() => setDiagnosticsOpen(false)}
+        showToast={showToast}
+      />
     </div>
   );
 };

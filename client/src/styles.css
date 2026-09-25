@@ -2766,3 +2766,433 @@ select:focus {
     align-items: flex-start;
   }
 }
+
+/* ==========================================================================
+   API Environment & System Diagnostics Styles
+   ========================================================================== */
+@keyframes pulseGlow {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.6;
+  }
+}
+
+@keyframes spinFast {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin-animation {
+  animation: spinFast 0.8s linear infinite;
+}
+
+/* Header Live API Status Pill */
+.header-api-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+}
+
+.header-api-status-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+  filter: brightness(1.08);
+}
+
+.header-api-status-pill.status-online {
+  border-color: rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.08);
+  color: var(--color-income);
+}
+
+.header-api-status-pill.status-checking {
+  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.08);
+  color: var(--color-warning);
+}
+
+.header-api-status-pill.status-offline {
+  border-color: rgba(244, 63, 94, 0.35);
+  background: rgba(244, 63, 94, 0.08);
+  color: var(--color-expense);
+}
+
+.status-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.pulse-green {
+  background-color: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.7);
+  animation: pulseGlow 2s infinite ease-in-out;
+}
+
+.pulse-red {
+  background-color: #f43f5e;
+  box-shadow: 0 0 8px rgba(244, 63, 94, 0.7);
+}
+
+.pulse-yellow {
+  background-color: #f59e0b;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.7);
+  animation: pulseGlow 1.2s infinite ease-in-out;
+}
+
+/* Diagnostics Modal Styles */
+.diagnostics-dialog {
+  max-width: 680px;
+  width: 100%;
+}
+
+.diagnostics-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 24px;
+  max-height: 75vh;
+  overflow-y: auto;
+}
+
+.diagnostics-header-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.status-indicator-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-dot.dot-online {
+  background-color: #10b981;
+  box-shadow: 0 0 6px #10b981;
+}
+
+.status-dot.dot-offline {
+  background-color: #f43f5e;
+  box-shadow: 0 0 6px #f43f5e;
+}
+
+.diagnostics-hero-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+}
+
+.diagnostics-hero-banner.hero-online {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+.diagnostics-hero-banner.hero-offline {
+  background: rgba(244, 63, 94, 0.08);
+  border-color: rgba(244, 63, 94, 0.25);
+}
+
+.hero-icon-wrap {
+  flex-shrink: 0;
+}
+
+.hero-text-wrap {
+  flex: 1;
+}
+
+.hero-text-wrap h4 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.hero-text-wrap p {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.btn-ping-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  color: var(--text-main);
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.btn-ping-action:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.btn-ping-action:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.diagnostics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 580px) {
+  .diagnostics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.diag-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.diag-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.diag-label {
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.diag-code-box {
+  background: var(--bg-input);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  word-break: break-all;
+  font-family: monospace;
+  color: var(--color-primary);
+  border: 1px solid var(--border-subtle);
+}
+
+.diag-value-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.diag-big-val {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.latency-pill {
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-weight: 600;
+}
+
+.latency-fast {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.latency-medium {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.latency-slow {
+  background: rgba(244, 63, 94, 0.15);
+  color: #f43f5e;
+}
+
+.diag-status-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--text-main);
+}
+
+.diag-status-badge {
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: rgba(59, 130, 246, 0.12);
+  color: var(--color-primary);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.diag-sub-badge {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.diag-footer-note {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.diagnostics-guide-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.guide-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.guide-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.btn-copy-env {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-copy-env:hover {
+  border-color: var(--color-primary);
+}
+
+.env-code-preview {
+  background: var(--bg-input);
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  font-family: monospace;
+  font-size: 0.78rem;
+  color: #93c5fd;
+  line-height: 1.45;
+  overflow-x: auto;
+}
+
+.env-hint-text {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* Auth Page Connection Alert */
+.auth-api-alert {
+  background: rgba(244, 63, 94, 0.1);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.82rem;
+  color: #fca5a5;
+  text-align: left;
+}
+
+.auth-api-alert .alert-content {
+  flex: 1;
+}
+
+.auth-api-alert .alert-title {
+  font-weight: 700;
+  color: #f87171;
+  margin-bottom: 2px;
+}
+
+.auth-api-alert code {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: #fef08a;
+  font-family: monospace;
+}
+
+.auth-api-alert button {
+  background: rgba(244, 63, 94, 0.2);
+  border: 1px solid rgba(244, 63, 94, 0.4);
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 600;
+  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s;
+}
+
+.auth-api-alert button:hover {
+  background: rgba(244, 63, 94, 0.35);
+}
+

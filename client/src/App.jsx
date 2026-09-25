@@ -24,6 +24,11 @@ function MainApp() {
   const [toast, setToast] = useState(null);
   const [refreshCounter, setRefreshCounter] = useState(0);
 
+  useEffect(() => {
+    const appTitle = import.meta.env.VITE_APP_TITLE || 'Ledgerly — Expense Tracker';
+    document.title = appTitle;
+  }, []);
+
   const showToast = useCallback((message, type = 'info') => {
     setToast({ message, type });
     setTimeout(() => {

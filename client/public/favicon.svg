@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="grad-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+    <linearGradient id="grad-accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e0f2fe"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  <!-- Rounded Base Background -->
+  <rect width="64" height="64" rx="16" fill="url(#grad-bg)"/>
+  
+  <!-- Sleek Card/Wallet Icon -->
+  <g filter="url(#shadow)">
+    <!-- Credit Card Shape -->
+    <rect x="12" y="18" width="40" height="28" rx="5" fill="#090d16" fill-opacity="0.88" stroke="url(#grad-accent)" stroke-width="1.8"/>
+    <!-- Card Stripe -->
+    <rect x="12" y="24" width="40" height="6" fill="#3b82f6" fill-opacity="0.65"/>
+    <!-- Chip / Accent -->
+    <rect x="17" y="34" width="8" height="6" rx="1.5" fill="#10b981"/>
+    <!-- Ascending Trend Graph Lines -->
+    <path d="M31 37 L36 33 L41 35 L47 29" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="47" cy="29" r="1.5" fill="#ffffff"/>
+  </g>
+</svg>

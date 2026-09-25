@@ -12,4 +12,19 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    chunkSizeWarningLimit: 900,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/recharts') || id.includes('node_modules/d3-')) {
+            return 'charts-vendor';
+          }
+          if (id.includes('node_modules/lucide-react')) {
+            return 'icons-vendor';
+          }
+        },
+      },
+    },
+  },
 });

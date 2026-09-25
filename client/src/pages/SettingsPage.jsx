@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   User,
   DollarSign,
@@ -12,9 +12,13 @@ import {
   ShieldCheck,
   Server,
   Layers,
+  Activity,
+  RefreshCw,
+  Copy,
+  Terminal,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import api from '../services/api';
+import api, { checkApiHealth, getAppConfig } from '../services/api';
 
 export const SettingsPage = ({ showToast, onRefreshAll }) => {
   const { user, updateUser, formatMoney, currencySymbol } = useAuth();
@@ -25,6 +29,10 @@ export const SettingsPage = ({ showToast, onRefreshAll }) => {
   const [newPassword, setNewPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [dbActionBusy, setDbActionBusy] = useState(false);
+  const [envConfig] = useState(getAppConfig());
+  const [healthCheck, setHealthCheck] = useState(null);
+  const [pinging, setPinging] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState(false);
 
   React.useEffect(() => {
     if (user) {
@@ -85,6 +93,34 @@ export const SettingsPage = ({ showToast, onRefreshAll }) => {
     } finally {
       setDbActionBusy(false);
     }
+  };
+
+  const handleTestPing = async () => {
+    setPinging(true);
+    try {
+      const res = await checkApiHealth();
+      setHealthCheck(res);
+      if (res.ok) {
+        showToast?.(`API connected! Latency: ${res.latencyMs}ms (${res.database})`, 'success');
+      } else {
+        showToast?.(`API offline: ${res.error}`, 'error');
+      }
+    } catch (err) {
+      showToast?.('Ping test failed', 'error');
+    } finally {
+      setPinging(false);
+    }
+  };
+
+  useEffect(() => {
+    handleTestPing();
+  }, []);
+
+  const handleCopyUrl = () => {
+    navigator.clipboard?.writeText(envConfig.apiUrl);
+    setCopiedUrl(true);
+    showToast?.('API URL copied to clipboard!', 'success');
+    setTimeout(() => setCopiedUrl(false), 2000);
   };
 
   const userInitial = user?.name ? user.name[0].toUpperCase() : 'U';
@@ -228,6 +264,68 @@ export const SettingsPage = ({ showToast, onRefreshAll }) => {
               >
                 <Trash2 size={16} />
                 <span>Clear All Transactions</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Client Environment & API Diagnostics */}
+          <div className="settings-panel-card">
+            <div className="panel-header-row">
+              <div>
+                <span className="panel-eyebrow">ENVIRONMENT & API</span>
+                <h3 className="panel-title">Client & Backend Status</h3>
+              </div>
+              <Server size={18} className="text-primary" />
+            </div>
+
+            <div className="diag-card" style={{ margin: '8px 0', border: 'none', padding: 0, background: 'transparent' }}>
+              <span className="diag-label">Configured API Base URL</span>
+              <div className="diag-code-box" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                <code style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{envConfig.apiUrl}</code>
+                <button
+                  type="button"
+                  onClick={handleCopyUrl}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', display: 'flex', alignItems: 'center', padding: '2px' }}
+                  title="Copy API URL to clipboard"
+                >
+                  {copiedUrl ? <Check size={14} className="text-income" /> : <Copy size={14} />}
+                </button>
+              </div>
+            </div>
+
+            <div className="stack-specs-list" style={{ marginTop: '10px' }}>
+              <div className="spec-row">
+                <span className="spec-key">API Status</span>
+                <span className="spec-val" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span className={`status-dot small ${healthCheck?.ok ? 'dot-online' : 'dot-offline'}`} />
+                  {healthCheck?.ok ? 'Online & Healthy' : pinging ? 'Testing...' : 'Offline'}
+                </span>
+              </div>
+              <div className="spec-row">
+                <span className="spec-key">Latency</span>
+                <span className="spec-val">
+                  {healthCheck?.latencyMs !== undefined && healthCheck?.latencyMs !== null ? `${healthCheck.latencyMs} ms` : '—'}
+                </span>
+              </div>
+              <div className="spec-row">
+                <span className="spec-key">Database</span>
+                <span className="spec-val">{healthCheck?.database ? healthCheck.database.toUpperCase() : 'Checking...'}</span>
+              </div>
+              <div className="spec-row">
+                <span className="spec-key">Client Mode</span>
+                <span className="spec-val">{envConfig.appEnv.toUpperCase()}</span>
+              </div>
+            </div>
+
+            <div style={{ marginTop: '12px' }}>
+              <button
+                type="button"
+                className="btn-outline-action full-width"
+                onClick={handleTestPing}
+                disabled={pinging}
+              >
+                <RefreshCw size={14} className={pinging ? 'spin-animation' : ''} />
+                <span>{pinging ? 'Testing Connection...' : 'Test Connection / Ping'}</span>
               </button>
             </div>
           </div>
