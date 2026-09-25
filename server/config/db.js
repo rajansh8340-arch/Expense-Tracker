@@ -6,6 +6,12 @@ const doConnect = async () => {
   const targetUri = process.env.MONGO_URI;
 
   if (targetUri) {
+    if (process.env.VERCEL && (targetUri.includes('127.0.0.1') || targetUri.includes('localhost'))) {
+      throw new Error(
+        'MONGO_URI on Vercel is set to localhost (127.0.0.1). Vercel is a serverless cloud environment that requires a cloud MongoDB database such as MongoDB Atlas (mongodb+srv://...). Please update MONGO_URI in your Vercel Project Settings > Environment Variables.'
+      );
+    }
+
     const sanitizedUri = targetUri.replace(/:([^:@]{4})[^:@]*@/, ':****@');
     console.log(`Connecting to MongoDB at: ${sanitizedUri} ...`);
     const conn = await mongoose.connect(targetUri, {
