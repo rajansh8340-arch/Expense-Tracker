@@ -38,13 +38,6 @@ router.post('/register', async (req, res) => {
     currency: currency || 'USD',
   });
 
-  // Seed sample transactions so new user sees rich charts immediately
-  try {
-    await seedTransactionsForUser(user._id);
-  } catch (err) {
-    console.warn('Could not auto-seed transactions for new user:', err.message);
-  }
-
   res.status(201).json({
     token: tokenFor(user),
     user: {
