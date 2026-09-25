@@ -1,47 +1,93 @@
 import mongoose from 'mongoose';
 
-let mongoMemoryServer = null;
+let connectingPromise = null;
 
-export const connectDB = async () => {
-  const targetUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/expense_tracker';
-  
-  try {
-    // First, attempt connecting to the configured MongoDB URI (local or Atlas)
-    console.log(`Connecting to MongoDB at: ${targetUri.replace(/:([^:@]{4})[^:@]*@/, ':****@')} ...`);
+const doConnect = async () => {
+  const targetUri = process.env.MONGO_URI;
+
+  if (targetUri) {
+    const sanitizedUri = targetUri.replace(/:([^:@]{4})[^:@]*@/, ':****@');
+    console.log(`Connecting to MongoDB at: ${sanitizedUri} ...`);
     const conn = await mongoose.connect(targetUri, {
-      serverSelectionTimeoutMS: 2500, // Quick failover if local daemon isn't running
+      serverSelectionTimeoutMS: 8000, // 8s timeout for serverless cold start to Atlas
+      bufferCommands: false,
     });
     console.log(`MongoDB Connected: ${conn.connection.host}`);
     return conn;
-  } catch (primaryErr) {
-    console.warn(`Could not connect to external MongoDB: ${primaryErr.message}`);
-    console.log('Spinning up embedded MongoDB instance for automatic zero-config database...');
+  }
 
+  // Fallback for local development if MONGO_URI is not set
+  if (!process.env.VERCEL && process.env.NODE_ENV !== 'production') {
+    const localUri = 'mongodb://127.0.0.1:27017/expense_tracker';
     try {
-      const { MongoMemoryServer } = await import('mongodb-memory-server');
-      mongoMemoryServer = await MongoMemoryServer.create({
-        instance: {
-          dbName: 'expense_tracker'
-        }
+      console.log(`Connecting to local MongoDB at: ${localUri} ...`);
+      const conn = await mongoose.connect(localUri, {
+        serverSelectionTimeoutMS: 2000,
+        bufferCommands: false,
       });
-      const memUri = mongoMemoryServer.getUri();
-      const conn = await mongoose.connect(memUri);
-      console.log(`Embedded MongoDB Connected successfully at: ${memUri}`);
+      console.log(`Local MongoDB Connected: ${conn.connection.host}`);
       return conn;
-    } catch (memErr) {
-      console.error('Fatal Error: Failed to start embedded MongoDB:', memErr.message);
-      throw memErr;
+    } catch (primaryErr) {
+      console.warn(`Local MongoDB not running: ${primaryErr.message}`);
+      console.log('Spinning up embedded MongoDB instance for automatic zero-config database...');
+
+      try {
+        await mongoose.disconnect();
+      } catch (_) {}
+
+      try {
+        const { MongoMemoryServer } = await import('mongodb-memory-server');
+        const memServer = await MongoMemoryServer.create({
+          instance: { dbName: 'expense_tracker' },
+        });
+        const memUri = memServer.getUri();
+        const conn = await mongoose.connect(memUri, { bufferCommands: false });
+        console.log(`Embedded MongoDB Connected successfully at: ${memUri}`);
+        return conn;
+      } catch (memErr) {
+        console.error('Failed to start embedded MongoDB:', memErr.message);
+        throw memErr;
+      }
     }
+  }
+
+  // In production / Vercel without MONGO_URI
+  throw new Error('MONGO_URI is not defined. Please configure MONGO_URI in your Vercel project environment variables.');
+};
+
+export const connectDB = async () => {
+  // If already connected, return existing connection
+  if (mongoose.connection.readyState === 1) {
+    return mongoose.connection;
+  }
+
+  // If already connecting, await the single in-flight promise
+  if (connectingPromise) {
+    return connectingPromise;
+  }
+
+  connectingPromise = doConnect();
+
+  try {
+    const conn = await connectingPromise;
+    return conn;
+  } catch (err) {
+    console.error(`MongoDB connection error: ${err.message}`);
+    throw err;
+  } finally {
+    connectingPromise = null;
   }
 };
 
 export const disconnectDB = async () => {
   try {
-    await mongoose.disconnect();
-    if (mongoMemoryServer) {
-      await mongoMemoryServer.stop();
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.disconnect();
     }
+    connectingPromise = null;
   } catch (err) {
     console.error('Error during database disconnect:', err.message);
   }
 };
+
+export default connectDB;

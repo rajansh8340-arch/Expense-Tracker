@@ -1,6 +1,8 @@
 {
   "name": "expense-tracker-server",
+  "version": "1.0.0",
   "type": "module",
+  "main": "server.js",
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js"
